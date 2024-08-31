@@ -1,0 +1,237 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{float}
+
+\title{Single Phase Extraction Synthesis: Phase Dependent Isolated Oscillations\\ \small{1st Edition}}
+\author{Digital Down}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Single Phase Extraction Synthesis is a separate type of Extraction Synthesis that separates and processes individual phases of an audio waveform.
+\end{abstract}
+
+\section{Introduction}
+Extraction Synthesis, as introduced in previous work \cite{DigitalDown2024}, is a technique that isolates individual oscillations from audio inputs by analyzing raw audio data at the sample level. Single Phase Extraction Synthesis extends this concept by focusing on specific phases of the audio waveform. Samples are scanned for either positive or negative values, depending on the chosen phase. A key difference in Single Phase Extraction Synthesis is that the expected oscillation count for each note is halved. This adjustment accounts for considering only one phase of a complete waveform.
+
+\section{Methodology}
+
+\subsection{Oscillation Identification}
+Single Phase Extraction Synthesis scans the list of sample values to identify complete single-phase oscillations. An oscillation is defined as a sequence of sample values that starts and ends with a zero crossing, containing only positive or only negative values, depending on the chosen phase.\\
+
+Let $S$ be the set of sample values $\{s_1, s_2, ..., s_n\}$
+
+A positive phase oscillation $O_p$ is defined as a subsequence of $S$ where:
+\begin{equation*}
+O_p = \{s_i, s_{i+1}, ..., s_j\} \text{ where } s_i \geq 0, s_j \geq 0, \text{ and } \forall k : i < k < j, s_k > 0
+\end{equation*}
+
+A negative phase oscillation $O_n$ is defined as a subsequence of $S$ where:
+\begin{equation*}
+O_n = \{s_i, s_{i+1}, ..., s_j\} \text{ where } s_i \leq 0, s_j \leq 0, \text{ and } \forall k : i < k < j, s_k < 0
+\end{equation*}
+
+The algorithm tracks a single counter:
+\begin{itemize}
+    \item Phase Count: The number of consecutive samples in the chosen phase
+\end{itemize}
+
+When a complete single-phase oscillation has been scanned, the algorithm checks if an accepted sample sequence has occurred.
+
+\subsection{Note Frequency Matching}
+For each identified oscillation, the total sample count (Phase Count) is compared to half the expected sample count for each musical note. The expected sample count for a note is calculated as follows:
+
+\begin{equation*}
+    \text{Expected Phase Count} = \text{Round}\left(\frac{\text{Round}(\frac{\text{Sample Rate}}{\text{Note Frequency}})}{2}\right)
+\end{equation*}
+
+Where:
+\begin{itemize}
+    \item Sample Rate = 44100 Samples Per Second
+    \item Note Frequency is in Hz
+\end{itemize}
+
+For example, for the note A4:
+\begin{itemize}
+    \item A4 Frequency = 440 Hz
+    \item Expected Sample Count = Round(44100 / 440) = 100
+    \item Expected Single-Phase Count = Round(100 / 2) = 50
+\end{itemize}
+
+\subsection{Phase Adjustment}
+After processing, the extracted oscillations are adjusted based on the chosen phase:
+\begin{itemize}
+    \item For positive phase: All sample values are made positive using absolute value.
+    \item For negative phase: All sample values are made negative using negation of absolute value.
+\end{itemize}
+
+\subsection{Note Frequency Tables}
+The following tables list all the notes considered in the current implementation, along with their frequencies and expected oscillation counts (halved for single-phase extraction):
+
+\newcommand{\notetable}[2]{
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l>{\centering\arraybackslash}Xr@{}}
+\toprule
+Note & \multicolumn{1}{c}{\hspace{2.75cm}Frequency (Hz)} & Expected Oscillation Count \\
+\midrule
+#1
+\bottomrule
+\end{tabularx}
+\caption{Note Frequencies and Expected Oscillation Counts - Octave #2}
+\label{table:note_frequencies_#2}
+\end{table}
+}
+
+\newcommand{\noterow}[3]{
+#1 & \hspace{2.75cm}#2 & #3 \\
+}
+
+\notetable{
+\multicolumn{3}{c}{\textbf{Octave 1}} \\
+\midrule
+\noterow{C1}{32.70}{674}
+\rowcolor{gray!10} \noterow{C\#1/D$\flat$1}{34.65}{637}
+\noterow{D1}{36.71}{601}
+\rowcolor{gray!10} \noterow{D\#1/E$\flat$1}{38.89}{567}
+\noterow{E1}{41.20}{535}
+\rowcolor{gray!10} \noterow{F1}{43.65}{505}
+\noterow{F\#1/G$\flat$1}{46.25}{477}
+\rowcolor{gray!10} \noterow{G1}{49.00}{450}
+\noterow{G\#1/A$\flat$1}{51.91}{425}
+\rowcolor{gray!10} \noterow{A1}{55.00}{401}
+\noterow{A\#1/B$\flat$1}{58.27}{379}
+\rowcolor{gray!10} \noterow{B1}{61.74}{357}
+\midrule
+\multicolumn{3}{c}{\textbf{Octave 2}} \\
+\midrule
+\noterow{C2}{65.41}{337}
+\rowcolor{gray!10} \noterow{C\#2/D$\flat$2}{69.30}{318}
+\noterow{D2}{73.42}{301}
+\rowcolor{gray!10} \noterow{D\#2/E$\flat$2}{77.78}{284}
+\noterow{E2}{82.41}{268}
+\rowcolor{gray!10} \noterow{F2}{87.31}{253}
+\noterow{F\#2/G$\flat$2}{92.50}{239}
+\rowcolor{gray!10} \noterow{G2}{98.00}{225}
+\noterow{G\#2/A$\flat$2}{103.83}{213}
+\rowcolor{gray!10} \noterow{A2}{110.00}{201}
+\noterow{A\#2/B$\flat$2}{116.54}{189}
+\rowcolor{gray!10} \noterow{B2}{123.47}{179}
+}{1 and 2}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l>{\centering\arraybackslash}Xr@{}}
+\toprule
+Note & \multicolumn{1}{c}{\hspace{2.75cm}Frequency (Hz)} & Expected Oscillation Count \\
+\midrule
+\multicolumn{3}{c}{\textbf{Octave 3}} \\
+\midrule
+\noterow{C3}{130.81}{169}
+\rowcolor{gray!10} \noterow{C\#3/D$\flat$3}{138.59}{159}
+\noterow{D3}{146.83}{150}
+\rowcolor{gray!10} \noterow{D\#3/E$\flat$3}{155.56}{142}
+\noterow{E3}{164.81}{134}
+\rowcolor{gray!10} \noterow{F3}{174.61}{127}
+\noterow{F\#3/G$\flat$3}{185.00}{119}
+\rowcolor{gray!10} \noterow{G3}{196.00}{113}
+\noterow{G\#3/A$\flat$3}{207.65}{106}
+\rowcolor{gray!10} \noterow{A3}{220.00}{100}
+\noterow{A\#3/B$\flat$3}{233.08}{95}
+\rowcolor{gray!10} \noterow{B3}{246.94}{90}
+\midrule
+\multicolumn{3}{c}{\textbf{Octave 4}} \\
+\midrule
+\noterow{C4}{261.63}{85}
+\rowcolor{gray!10} \noterow{C\#4/D$\flat$4}{277.18}{80}
+\noterow{D4}{293.66}{75}
+\rowcolor{gray!10} \noterow{D\#4/E$\flat$4}{311.13}{71}
+\noterow{E4}{329.63}{67}
+\rowcolor{gray!10} \noterow{F4}{349.23}{63}
+\noterow{F\#4/G$\flat$4}{369.99}{60}
+\rowcolor{gray!10} \noterow{G4}{392.00}{57}
+\noterow{G\#4/A$\flat$4}{415.30}{53}
+\rowcolor{gray!10} \noterow{A4}{440.00}{50}
+\noterow{A\#4/B$\flat$4}{466.16}{48}
+\rowcolor{gray!10} \noterow{B4}{493.88}{45}
+\midrule
+\multicolumn{3}{c}{\textbf{Octave 5}} \\
+\midrule
+\noterow{C5}{523.25}{42}
+\rowcolor{gray!10} \noterow{C\#5/D$\flat$5}{554.37}{40}
+\noterow{D5}{587.33}{38}
+\rowcolor{gray!10} \noterow{D\#5/E$\flat$5}{622.25}{36}
+\noterow{E5}{659.25}{34}
+\rowcolor{gray!10} \noterow{F5}{698.46}{32}
+\noterow{F\#5/G$\flat$5}{739.99}{30}
+\rowcolor{gray!10} \noterow{G5}{783.99}{28}
+\noterow{G\#5/A$\flat$5}{830.61}{27}
+\rowcolor{gray!10} \noterow{A5}{880.00}{25}
+\noterow{A\#5/B$\flat$5}{932.33}{24}
+\rowcolor{gray!10} \noterow{B5}{987.77}{23}
+\bottomrule
+\end{tabularx}
+\caption{Note Frequencies and Expected Oscillation Counts - Octaves 3, 4, and 5}
+\label{table:note_frequencies_345}
+\end{table}
+
+\subsection{Optional Parameters}
+\subsubsection{Audio Normalization}
+To optimize the extraction process, it is ideal to normalize the input audio in situations where the audio input is too quiet. The normalization process involves the following steps:
+
+\begin{enumerate}
+\item Find the maximum absolute value in the audio samples.
+\item Divide all samples by this maximum value.
+\item Multiply the result by the maximum possible absolute value for 16-bit audio (32767).
+\end{enumerate}
+\begin{equation*}
+s'_i = \frac{s_i}{\max(|S|)} \cdot 32767 \quad
+\end{equation*}
+
+Where $\max(|S|)$ is the maximum absolute value in the original sample set.
+
+\subsubsection{Maximum Amplitude Threshold}
+Similar to the original amplitude threshold outlined in the original Extraction Synthesis research, the average absolute values in an oscillation must not exceed the maximum average absolute threshold.
+
+\begin{equation*}
+    \text{Average Absolute Value} = \frac{\sum|s_i|}{n}
+\end{equation*}
+{\centering \small\text{($s_i$ are the samples in the oscillation and $n$ is the number of samples)} \par}
+
+\subsubsection{Methylphenathylamine}
+Methylphenathylamine is an audio time stretching technology and is used in Extraction Synthesis in situations where audio input is typically too short or for any other reason where less oscillations are accepted. There are two operations that are used called M-Slow and M-Fast.
+
+\begin{itemize}
+    \item M-Slow: Doubles the audio input time allowing for oscillation captures that are half of the typical accepted oscillation's sample count.
+    \item M-Fast: Halves the audio input time allowing for oscillation captures that are double the typical accepted oscillation's sample count.
+\end{itemize}
+
+
+
+
+\section{Conclusion}
+As a type of Extraction Synthesis, Single Phase Extraction Synthesis intends to create sounds that would not be possible in the traditional Extraction Synthesis method. 
+
+\begin{thebibliography}{9}
+\bibitem{DigitalDown2024} Digital Down. (2024). Extraction Synthesis: Audio Synthesis Through Oscillation Isolation. 1st Edition.
+\end{thebibliography}
+
+
+
+\section*{Further Research}
+Further research is currently being done to separate phases further into Beta+ and Beta- Phases within a corresponding individual phase. This will allow even more diverse kinds of sounds that Extraction Synthesis is able to create.
+
+\end{document}
