@@ -1,0 +1,89 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{float}
+
+\title{Dissection Synthesis: Intermediate Harmonic Transformations at the Oscillation Level\\
+\small{1st Edition}}
+\author{Digital Down}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Dissection Synthesis is a technique that allows for the precise manipulation of individual oscillations within a waveform. This method allows for the creation of intermediate harmonic transformations for a unique method of pitch-shifting at the oscillation level.
+\end{abstract}
+
+\section{Introduction}
+Dissection Synthesis is an audio processing technique that draws inspiration from Extraction Synthesis by isolating individual oscillations from audio inputs but is defined separately by executing mathematical operations within the range of raw sample values in each oscillation, rather than being an exact extraction of the oscillation. By operating on the extracted samples, harmonic content can be derived and exported exclusively or with the addition of the initial audio sample values.
+\section{Methodology}
+
+\subsection{Oscillation Identification}
+Oscillation isolation and extraction is performed as outlined in Extraction Synthesis. \cite{DigitalDown2024}  "Extraction Synthesis scans the list of sample values to identify complete oscillations. An oscillation is defined as a sequence of sample values that starts positive, becomes negative, and then returns to positive."\\\\
+\subsection{Harmonic Transformations}
+Once an oscillation has been extracted, samples are added or removed in sequential intervals to match their intended harmonic interval sample count. 
+\subsubsection{Octave+}
+To double the frequency and go upwards an octave, all even samples are removed and the sample sequence is doubled to match the length of the initial audio sample length. If the value of an oscillation's sample count is an odd integer, then a sample is concatenated at the end of the sample sequence with a value of 0 after the sequence has been expanded to the appropriate length. The process can be repeated to obtain harmonic transformation in higher octaves.
+
+% Octave+ (Doubling frequency)
+\begin{center}
+\text{Removing Even Samples}
+\end{center}
+\begin{equation*}
+y[n] = x[2n], \quad n = 0, 1, \ldots, \lfloor N/2 \rfloor - 1
+\end{equation*}
+
+\begin{center}
+\text{For Odd $N$, Append Zero}
+\end{center}
+\begin{equation*}
+y[\lfloor N/2 \rfloor] = 0
+\end{equation*}
+
+\begin{center}
+\text{Expansion To Initial Length}
+\end{center}
+\begin{equation*}
+y'[2n] = y'[2n+1] = y[n], \quad n = 0, 1, \ldots, \lfloor N/2 \rfloor - 1
+\end{equation*}
+\subsubsection{Octave-}
+To halve the frequency and go downwards an octave, the sample sequence appends a new value between each surrounding sample value, and the sample sequence is halved to match the initial audio sample length. The process can be repeated to obtain harmonic transformation in lower octaves.
+
+% Octave- (Halving frequency)
+\begin{center}
+\text{Interpolation Between Samples}
+\end{center}
+\begin{align*}
+y[2n] &= x[n], \quad n = 0, 1, \ldots, N-1 \\
+y[2n+1] &= \frac{x[n] + x[n+1]}{2}, \quad n = 0, 1, \ldots, N-2 \\
+y[2N-1] &= x[N-1]
+\end{align*}
+
+\begin{center}
+\text{Reduction To Initial Length}
+\end{center}
+\begin{equation*}
+y'[n] = y[2n], \quad n = 0, 1, \ldots, N-1
+\end{equation*}
+\subsection{Audio Normalization}
+To ensure the processed signal remains within the appropriate amplitude range if and when combining with the initial audio, a normalization step is applied to prevent clipping. Audio Normalization has been outlined in Single Phase Extraction Synthesis. \cite{DigitalDown2024B} In Dissection Synthesis, Audio Normalization is applied as a post processing step when sample values become larger than their 16 bit integer values.
+
+\section{Conclusion}
+The processed audio can be combined with the initial audio or extracted separately with the intent of creating a unique pitch-shifting effect to be used in a music production environment.
+
+\begin{thebibliography}{9}
+\bibitem{DigitalDown2024} Digital Down. (2024). Extraction Synthesis: Audio Synthesis Through Oscillation Isolation. 1st Edition.
+\bibitem{DigitalDown2024B} Digital Down. (2024). Single Phase Extraction Synthesis: Phase Dependent Isolated Oscillations. 1st Edition.
+\end{thebibliography}
+\section*{Further Research}
+Further research is currently being conducted on Temporal Dissection Synthesis which aims to bring a more qualitative pitch preservation option to time-stretching in Methylphenethylamine technology.
+\end{document}
