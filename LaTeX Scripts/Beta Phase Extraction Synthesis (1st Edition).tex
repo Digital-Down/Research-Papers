@@ -1,0 +1,216 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage[table]{xcolor}
+
+\title{Beta Phase Extraction Synthesis: Results of an Arbitrary Extraction Type\\
+\small{1st Edition}}
+\author{Digital Down}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Beta Phase Extraction Synthesis is a separate type of Extraction Synthesis that extracts oscillations within individual sub-phases of an audio waveform. This paper details the tests and results of this non-ideal extraction type as well as other fallacies from prior extraction types.
+\end{abstract}
+
+\section{Introduction}
+Extraction Synthesis, as introduced in previous work \cite{DigitalDown2024}, is a technique that isolates individual oscillations from audio inputs by analyzing raw audio data at the sample level. Single Phase Extraction Synthesis, as introduced in a subsequent paper \cite{DigitalDown2024B}, extends this concept by focusing on specific phases of the audio waveform.
+
+\section{Methodology}
+
+In Beta Phase Extraction Synthesis, we separate each phase into two further phases: Beta+ and Beta-.
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{gray!10}{white}
+\begin{tabular}{|l|r@{\hspace{0.5em}}c@{\hspace{0.5em}}l|}
+\hline
+\rowcolor{white}
+Phase Group & \multicolumn{3}{c|}{Sample Value Range} \\
+\hline
+Beta+ Positive & 16385 & to & \hphantom{-}32768 \\
+Beta- \space Positive & \phantom{1}1 & to & \hphantom{-}16384 \\
+Beta+ Negative & -16385 & to & -32768 \\
+Beta- \space Negative & \phantom{1}-1 & to & -16384 \\
+\hline
+\end{tabular}
+\caption{Accepted Indices for Each Phase Group}
+\label{tab:phase_groups}
+\end{table}
+
+\subsection{Oscillation Identification}
+The algorithm tracks four counters:
+\begin{itemize}
+    \item Beta+ Positive Count: The number of consecutive samples in $B^{++}$
+    \item Beta- Positive Count: The number of consecutive samples in $B^{-+}$
+    \item Beta+ Negative Count: The number of consecutive samples in $B^{+-}$
+    \item Beta- Negative Count: The number of consecutive samples in $B^{--}$
+\end{itemize}
+Beta Phase Extraction Synthesis scans the list of sample values to identify and count oscillations within specific phase groups. If the method for extraction is 3/4 Wave, then oscillations begin only after a beta- buffer has been established for a given note.
+
+Let $S$ be the set of sample values $\{s_1, s_2, ..., s_n\}$
+
+We define four subsets of $S$:
+
+\begin{align*}
+B^{++} &= \{s | s \in S, 16385 \leq s \leq 32768\} \\
+B^{-+} &= \{s | s \in S, 1 \leq s \leq 16384\} \\
+B^{+-} &= \{s | s \in S, -32768 \leq s \leq -16385\} \\
+B^{--} &= \{s | s \in S, -16384 \leq s \leq -1\}
+\end{align*}
+
+An oscillation count $O_g$ for a phase group $g$ is defined as a subsequence of consecutive samples within that group:
+
+\begin{equation*}
+O_g = \{s_i, s_{i+1}, ..., s_j\} \text{ where } s_k \in g \text{ for all } i \leq k \leq j, \text{ and } s_{i-1} \notin g, s_{j+1} \notin g
+\end{equation*}
+
+
+
+\subsection{Oscillation Extraction}
+The following methods were tested as possibilities for Beta Phase Extraction.
+\subsubsection{Beta+ and Beta- Extraction}
+\noindent The counting process alternates between the phase groups as follows:
+\begin{enumerate}
+    \item Declare extraction type of Beta+ or Beta- Extraction.
+    \item Count consecutive samples within that phase group.
+    
+    \item When a sample from a different phase group is encountered:
+    \begin{itemize}
+        \item Record the count for the completed phase group.
+        \item Reset the counter for that phase group.
+    \end{itemize}
+    
+    \item If the count of the declared phase group correspond to an accepted oscillation, it is extracted.
+    \item Counter begins when the declared phase group is encountered again.
+\end{enumerate}
+Let $S = \{s_1, s_2, ..., s_n\}$ be the sequence of samples. Define an oscillation $O$ as a subsequence of $S$: $O = \{s_i, s_{i+1}, ..., s_j\}$ where:
+
+\begin{enumerate}
+\item $\text{sign}(s_{i-1}) \neq \text{sign}(s_i)$
+\item $\text{sign}(s_j) \neq \text{sign}(s_{j+1})$
+\item $\text{sign}(s_k) = \text{sign}(s_{k+1})$ for all $k$, $i \leq k < j$
+\end{enumerate}
+
+Where $\text{sign}(x)$ is the signum function:
+
+\begin{equation*}
+\text{sign}(x) = \begin{cases}
+1, & \text{if } x > 0 \\
+0, & \text{if } x = 0 \\
+-1, & \text{if } x < 0
+\end{cases}
+\end{equation*}
+
+The set of all oscillations $\Omega$ is then defined as: $\Omega = \{O_1, O_2, ..., O_m\}$ where each $O_i$ is an oscillation as defined above.
+\subsubsection{3/4 Wave Extraction}
+\noindent The counting process alternates between the phase groups as follows:
+\begin{enumerate}
+    \item After detecting a beta- buffer for a note (more on the beta- buffer in the next subsection), the algorithm starts looking for oscillations for that note.
+    \item The counter begins when Beta+ is encountered.
+    \item If the sum of the counts of Beta+, Beta-, and Beta- opposite correspond to an accepted oscillation, it is extracted and appended to the note's oscillation list.
+    \item After all oscillations have been processed, the algorithm appends the reversed beta- buffer to the end of each note's oscillation list. The sign of the reversed buffer is adjusted to match the sign of the last accepted oscillation sample for that note.
+\end{enumerate}
+
+Let $S = \{s_1, s_2, ..., s_n\}$ be the sequence of samples. Define an oscillation $O$ as a subsequence of $S$: $O = \{s_i, s_{i+1}, ..., s_j\}$ where:
+
+\begin{enumerate}
+\item $s_i \in B^{++} \cup B^{+-}$ (starts with Beta+)
+\item $s_{i+k} \in B^{-+} \cup B^{--}$ for some $k > 0$ (followed by Beta-)
+\item $s_j \in B^{-+} \cup B^{--}$ and $s_j$ has opposite sign to $s_{i+k}$ (ends with Beta- of opposite phase)
+\item $j - i + 1 = \left\lfloor\frac{sample\_rate}{f}\right\rfloor \pm 1$ for some note frequency $f$
+\end{enumerate}
+
+The set of all oscillations $\Omega$ is then defined as: $\Omega = \{O_1, O_2, ..., O_m\}$ where each $O_i$ is an oscillation as defined above.
+
+\subsection{Beta- Buffer Detection}
+A key component of the 3/4 Wave Extraction method is the detection and utilization of beta- buffers. The beta- buffer's purpose is to provide a smooth transition at the beginning and end of the extracted oscillation which will eliminate artifacts that could likely occur when the oscillation starts or ends at a value farther from zero.
+The beta- buffer detection and utilization process works as follows:
+
+\begin{enumerate}
+    \item The algorithm first searches for a beta- buffer for each note.
+    \item A beta- buffer is defined as a sequence of samples in the Beta- phase (either positive or negative) that is approximately half the length of the expected oscillation for a given note.
+    \item The buffer is considered valid if its length is within ±1 sample of half the expected oscillation length.
+    \item Once a valid beta- buffer is found for a note, it is stored and used as the starting point for that note's oscillations.
+    \item The algorithm only keeps one buffer per note. Once a buffer is established for a note, it moves on and doesn't replace it.
+    \item The beta- buffer is immediately appended to the beginning of the note's oscillation list upon detection.
+    \item After all oscillations for a note have been processed, the beta- buffer is appended in reverse order to the end of the note's oscillation list.
+    \item When appending the reversed buffer at the end, its sign is adjusted to match the sign of the last accepted oscillation sample for that note. This ensures a smooth transition at the end of the extracted waveform.
+\end{enumerate}
+
+Mathematically, for a note with frequency $f$, the expected buffer length $L_b$ is:
+
+\begin{equation*}
+L_b = \left\lfloor\frac{sample\_rate}{2f}\right\rfloor
+\end{equation*}
+
+A sequence of samples $B = \{b_1, b_2, ..., b_n\}$ is considered a valid beta- buffer if:
+
+\begin{equation*}
+|n - L_b| \leq 1
+\end{equation*}
+
+Let $O = \{o_1, o_2, ..., o_m\}$ be the extracted oscillation samples for a note. The final extracted waveform $W$ is constructed as:
+
+\begin{equation*}
+W = B + O + B_{rev}
+\end{equation*}
+
+where $B_{rev}$ is the reversed buffer, potentially with adjusted sign:
+
+\begin{equation*}
+B_{rev} = \begin{cases}
+    \{b_n, b_{n-1}, ..., b_1\} & \text{if } \text{sign}(o_m) = \text{sign}(b_n) \\
+    \{-b_n, -b_{n-1}, ..., -b_1\} & \text{if } \text{sign}(o_m) \neq \text{sign}(b_n)
+\end{cases}
+\end{equation*}
+\subsection{Results of Extraction Methods}
+The following arguments are made for Beta Phase Extraction as an arbitrary extraction type.
+\subsubsection{Beta+ Extraction Results}
+Beta+ is concluded to have very low sample counts consistently. This lends strongly to the assertion that the vast majority of sample values in an oscillation and more broadly digital audio lie between the range of a 15 bit integer which is also the defined range of Beta-.
+\subsubsection{Beta- Extraction Results}
+As a result of most of the sample counts being in this range, there is very little difference in extracting oscillations in this sub-phase and extracting oscillations in a single phase. Single Phase Extraction Synthesis would provide a more qualitative and quantitative result by utilizing the full range of values.
+\subsubsection{3/4 Wave Extraction Results}
+As a result of low sample counts in the Beta+ range, and the execution of extraction being defined as following the 3 sub-phases in order of Beta+, Beta- and Beta- opposite, the sample counts were, once again, very low.
+\subsection{Fallacies Derived from Alternate Extraction Types}
+The following arguments highlight fallacies in early test methods of other Extraction Synthesis types.
+\subsubsection{Fallacy in Extraction Synthesis: Shared Phase Sample Counts}
+The first definition of an oscillation in Extraction Synthesis declared that the positive and negative counts must equal each other. This was with the intent to create oscillations with less artifacts. Due to extremely low oscillation extractions within that definition, it became meaningful to reevaluate what Extraction Synthesis defined as an oscillation. An Oscillation in Extraction Synthesis then became defined as the sum of the sample counts, regardless if there are an equal number of positive and negative sample counts.
+
+\subsubsection{Fallacy in Single Phase Extraction Synthesis: Phase Shift Center Reconstruction}
+In addition to the positive and negative phase-dependent extractions, a tertiary extraction type had been tested that produced a centered waveform from a single phase. This process involved:
+
+\begin{enumerate}
+    \item Identifying the highest ($s_{max}$) and lowest ($s_{min}$) sample values within the chosen phase.
+    \item Calculating the middle value: $s_{mid} = \frac{s_{max} + s_{min}}{2}$
+    \item Subtracting this middle value from all samples in the phase.
+    \item Multiplying the result by 2 to restore the volume.
+\end{enumerate}
+
+Mathematically, this can be represented as:
+
+\begin{equation*}
+s_{centered} = (s_{original} - s_{mid}) \cdot 2
+\end{equation*}
+
+where $s_{original}$ is the original sample value, $s_{mid}$ is the calculated middle value for the chosen phase, and $s_{centered}$ is the centered sample value.
+
+ The primary intent of this method was to reduce phase issues in a production environment. Phase Shift Center Extraction was not a meaningful method for the same main reason why Beta Phase Extraction was not meaningful. A majority of the sample's values were in the Beta- range resulting in a waveform that was mostly in one phase region when centered. Adjusting the values to be more centered was not useful because Beta+ values are much more rare.
+
+\section{Conclusion}
+The methods and results provided seem to have strong implications that there is very little usefulness in creating sub-phases in Extraction Synthesis and would seem to provide a less qualitative alternative of Single Phase Extraction Synthesis.
+
+\begin{thebibliography}{9}
+\bibitem{DigitalDown2024} Digital Down. (2024). Extraction Synthesis: Audio Synthesis Through Oscillation Isolation. 1st Edition.
+\bibitem{DigitalDown2024B} Digital Down. (2024). Single Phase Extraction Synthesis: Phase Dependent Isolated Oscillations. 1st Edition.
+\end{thebibliography}
+
+\end{document}
