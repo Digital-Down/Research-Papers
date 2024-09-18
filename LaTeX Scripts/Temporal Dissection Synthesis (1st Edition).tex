@@ -1,0 +1,79 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{float}
+
+\title{Temporal Dissection Synthesis: Pitch Preservation in Time-Stretching Manipulations\\
+\small{1st Edition}}
+\author{Digital Down}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Temporal Dissection Synthesis is an audio processing technique that enables precise time-stretching of audio signals at the oscillation level. This method offers a unique approach to altering the temporal characteristics of sound while preserving pitch.
+\end{abstract}
+
+\section{Introduction}
+Temporal Dissection Synthesis builds upon the principles of Dissection Synthesis \cite{DigitalDown2024B}, focusing on the temporal aspects of audio signals rather than harmonic transformations. By manipulating the sample lengths of the oscillations, this technique allows for the expansion or compression of time without altering the fundamental frequency of the sound.
+
+\section{Methodology}
+
+\subsection{Oscillation Identification}
+The process of oscillation isolation and extraction follows the method outlined in Extraction Synthesis \cite{DigitalDown2024}. An oscillation is identified as a sequence of sample values that starts at zero, becomes either positive or negative, crosses zero, and then returns to zero.\\\\
+
+\subsection{Temporal Transformations}
+Once oscillations are extracted, they are manipulated to achieve the desired time-stretching effect. Two primary modes of operation are defined: TDSSlow for time expansion and TDSFast for time compression.
+
+\subsubsection{TDSSlow (Time Expansion)}
+To extend the duration of the audio, each oscillation is duplicated immediately after its occurrence. This process effectively doubles the time of the initial audio while maintaining its pitch.
+
+\begin{center}
+\text{Oscillation Duplication}
+\end{center}
+\begin{equation*}
+y[n] = \begin{cases}
+x[n] & \text{for the original oscillation} \\
+x[n - L_i] & \text{for the duplicated oscillation}
+\end{cases}
+\end{equation*}
+
+Where $x[n]$ represents the original signal, $y[n]$ is the time-expanded signal, and $L_i$ is the length of the $i$-th oscillation.
+
+\subsubsection{TDSFast (Time Compression)}
+To reduce the duration of the audio, every other oscillation is omitted from the output. This process approximately halves the time of the initial audio while preserving its pitch characteristics.
+
+\begin{center}
+\text{Oscillation Omittance}
+\end{center}
+\begin{equation*}
+y[n] = \begin{cases}
+x[m] & \text{if oscillation index } i \text{ is even} \\
+\text{omitted} & \text{if oscillation index } i \text{ is odd}
+\end{cases}
+\end{equation*}
+
+Where $m$ represents the sample index within the kept oscillations, and $i$ is the index of the oscillation in the original signal.\\\\
+Different channels have different oscillation sample lengths, therefore the right channel is not processed with Oscillation Omittance. The same sample lengths from the left channel are applied to the right channel to ensure temporal alignment. Mono signals are preferred in this method because of the absence of processing the oscillations in the right channel, leadind to intermittent artifacts.
+
+\section{Conclusion}
+Unlike traditional time-stretching methods that alter the pitch of the audio, Temporal Dissection Synthesis maintains the frequency information in each oscillation.
+
+\begin{thebibliography}{9}
+\bibitem{DigitalDown2024B} Digital Down. (2024). Dissection Synthesis: Intermediate Harmonic Transformations at the Oscillation Level. 1st Edition.
+\bibitem{DigitalDown2024} Digital Down. (2024). Extraction Synthesis: Audio Synthesis Through Oscillation Isolation. 1st Edition.
+\end{thebibliography}
+
+\section*{Further Research}
+Further research is currently being conducted on Dissection Scaling and Chordal Dissection Scaling, which aims to be pitch preservation tuning on an individual note level. Dissection Scaling defines a scale and adjusts the oscillations to be notes within the specific scale, likewise Chordal Dissection Scaling defines a chord and adjusts the oscillations to be notes within the specific chord.
+
+\end{document}
